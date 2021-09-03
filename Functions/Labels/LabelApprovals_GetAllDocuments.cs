@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
 using Microsoft.Azure.WebJobs;  
@@ -33,15 +34,14 @@ namespace Juxce.Tuneage.Functions.Labels
                 TableQuery<LabelTableEntity> getAllQuery = 
                     new TableQuery<LabelTableEntity>().Take(numberOfResults);
 
-                string responseMessage = string.Empty;
+                List<Label> results = new List<Label>();
                 foreach (LabelTableEntity entity in
                     await cloudTable.ExecuteQuerySegmentedAsync(getAllQuery, null)) {
-                        responseMessage += JsonConvert.SerializeObject(
-                            Mapper.LabelEntityToReturnObject(entity)
-                        );
+                        results.Add(Mapper.LabelEntityToReturnObject(entity));
                     }
 
-                return new OkObjectResult(responseMessage);
+                // return new OkObjectResult(responseMessage);
+                return new OkObjectResult(JsonConvert.SerializeObject(results));
             }
             catch(Exception ex) {
                 ErrorHandling.LogUnexpectedError(ex, log);
