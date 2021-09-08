@@ -16,7 +16,7 @@ namespace Juxce.Tuneage.Functions.Labels
     {
         [FunctionName("LabelSubmissions_PopUnverifiedQueue")]
         public static async Task<IActionResult> Run(
-            [HttpTrigger(AuthorizationLevel.Anonymous, "get", "post", Route = null)] HttpRequest req,
+            [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = null)] HttpRequest req,
             ILogger log)
         {
             try
@@ -30,7 +30,7 @@ namespace Juxce.Tuneage.Functions.Labels
 
                 messageId = messageId ?? data?.messageId;
 
-                if (!string.IsNullOrEmpty(messageId)) // && messageId = messageId
+                if (!string.IsNullOrEmpty(messageId))
                 {
                     // Create QueueClient to use proper Base64 encoding to match Azure Functions default
                     string connectionString = Environment.GetEnvironmentVariable("AzureWebJobsStorage",
@@ -45,11 +45,16 @@ namespace Juxce.Tuneage.Functions.Labels
                     await queue.CreateAsync();
 
                     // Pop the next message in queue
-                    var result = await queue.ReceiveMessageAsync();
-                    var nextMessage = result.Value;
-                    if (nextMessage.MessageId != messageId) {
+                    var peekResult = await queue.PeekMessageAsync(new System.Threading.CancellationToken());
+
+                    var peekedMessage = peekResult.Value;
+                    if (peekedMessage.MessageId != messageId) {
                         return new BadRequestObjectResult("Requested messageId did not match the next message in queue.");
                     }
+
+                    var receiveMessageResult = await queue.ReceiveMessageAsync();
+
+                    var nextMessage = receiveMessageResult.Value;
                     await queue.DeleteMessageAsync(nextMessage.MessageId, nextMessage.PopReceipt);
                 } else {
                     return new BadRequestObjectResult("No messageId was found in the request. Sorry.");
