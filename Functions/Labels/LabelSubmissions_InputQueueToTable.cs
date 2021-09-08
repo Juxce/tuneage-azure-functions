@@ -1,8 +1,8 @@
-using System;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Juxce.Tuneage.Domain.TableEntities;
+using Juxce.Tuneage.Common;
 
 namespace Juxce.Tuneage.Functions.Labels
 {
@@ -24,7 +24,7 @@ namespace Juxce.Tuneage.Functions.Labels
             dynamic data = JsonConvert.DeserializeObject(queueItem);
             return new LabelTableEntity {
                 PartitionKey = data.shortName,
-                RowKey = string.Empty,
+                RowKey = Utilities.GetTicks(),
                 ShortName = data.shortName,
                 LongName = data.longName,
                 Url = data.url,

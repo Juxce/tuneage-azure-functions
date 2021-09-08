@@ -15,8 +15,8 @@ namespace Juxce.Tuneage.Functions.Labels
     {
         [FunctionName("LabelApprovals_ReadDocument")]
         public static IActionResult Run(
-            [HttpTrigger(AuthorizationLevel.Anonymous, "get", "post", Route = null)] Label req,
-            [Table("%TableName_LabelApprovals%", "{ShortName}", "")] LabelTableEntity labelEntity, // Azure Table storage input binding, via TableAttribute
+            [HttpTrigger(AuthorizationLevel.Anonymous, "get", "post", Route = null)] LabelTableEntity req,
+            [Table("%TableName_LabelApprovals%", "{ShortName}", "{RowKey}")] LabelTableEntity labelEntity, // Azure Table storage input binding, via TableAttribute
             ILogger log)
         {
             try {

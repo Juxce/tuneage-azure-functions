@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 using Microsoft.Azure.WebJobs;  
 using Microsoft.Azure.WebJobs.Extensions.Http;
 using Microsoft.Azure.Cosmos.Table;
-using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Juxce.Tuneage.Domain.TableEntities;
@@ -18,7 +17,7 @@ namespace Juxce.Tuneage.Functions.Labels
     {
         [FunctionName("LabelApprovals_GetAllDocuments")]
         public static async Task<IActionResult> Run(
-            [HttpTrigger(AuthorizationLevel.Anonymous, "get", "post", Route = null)] Label req,
+            [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = null)] Label req,
             [Table("%TableName_LabelApprovals%")] CloudTable cloudTable, // Azure Table storage input binding, via TableAttribute
             ILogger log)
         {
@@ -40,7 +39,6 @@ namespace Juxce.Tuneage.Functions.Labels
                         results.Add(Mapper.LabelEntityToReturnObject(entity));
                     }
 
-                // return new OkObjectResult(responseMessage);
                 return new OkObjectResult(JsonConvert.SerializeObject(results));
             }
             catch(Exception ex) {
