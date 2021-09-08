@@ -17,7 +17,7 @@ namespace Juxce.Tuneage.Functions.Labels
     {
         [FunctionName("LabelApprovals_GetAllDocuments")]
         public static async Task<IActionResult> Run(
-            [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = null)] Label req,
+            [HttpTrigger(AuthorizationLevel.Anonymous, "get", "post", Route = null)] Label req,
             [Table("%TableName_LabelApprovals%")] CloudTable cloudTable, // Azure Table storage input binding, via TableAttribute
             ILogger log)
         {

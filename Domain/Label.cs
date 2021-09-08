@@ -4,6 +4,9 @@ using Newtonsoft.Json;
 namespace Juxce.Tuneage.Domain {
     [Serializable()]
     public class Label {
+        [JsonProperty(PropertyName = "rowKey")]
+        public string RowKey { get; set; }
+
         [JsonProperty(PropertyName = "shortName")]
         public string ShortName { get; set; }
 
