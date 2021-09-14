@@ -36,10 +36,11 @@ namespace Juxce.Tuneage.Functions.Labels
                 if (string.IsNullOrEmpty(shortName))
                     return new BadRequestObjectResult("No shortName was found in the request. Sorry.");
                 char lastChar = shortName[shortName.Length - 1];
-                char nextAsciiChar = lastChar++;
+                lastChar++;
+                char nextAsciiChar = lastChar;
                 char[] phraseAsChars = shortName.ToCharArray();
                 phraseAsChars[shortName.Length - 1] = nextAsciiChar;
-                string shortNameUpperBound = phraseAsChars.ToString();
+                string shortNameUpperBound = new string(phraseAsChars);
 
                 TableQuery<LabelTableEntity> sameFirstCharsQuery = new TableQuery<LabelTableEntity>().Where(
                     TableQuery.CombineFilters(
