@@ -23,7 +23,7 @@ namespace Juxce.Tuneage.Functions.Labels
             // Deserialize input queueItem, then build and return new table entry
             dynamic data = JsonConvert.DeserializeObject(queueItem);
             return new LabelTableEntity {
-                PartitionKey = data.shortName,
+                PartitionKey = Utilities.SanitizePrimaryKey(data.shortName),
                 RowKey = Utilities.GetTicks(),
                 ShortName = data.shortName,
                 LongName = data.longName,
