@@ -22,8 +22,8 @@ namespace Juxce.Tuneage.Functions.Labels
 
                 return new LabelTableEntity
                 {
-                    PartitionKey = req.ShortName,
-                    RowKey = Utilities.GetTicks(),
+                    PartitionKey = Utilities.SanitizePrimaryKey(req.ShortName),
+                    RowKey = Utilities.MakeSearchString(req.ShortName),
                     ShortName = req.ShortName,
                     LongName = req.LongName,
                     Url = req.Url,
