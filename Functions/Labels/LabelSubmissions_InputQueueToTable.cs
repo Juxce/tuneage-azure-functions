@@ -4,17 +4,14 @@ using Newtonsoft.Json;
 using Juxce.Tuneage.Domain.TableEntities;
 using Juxce.Tuneage.Common;
 
-namespace Juxce.Tuneage.Functions.Labels
-{
-  public static class LabelSubmissions_InputQueueToTable
-  {
+namespace Juxce.Tuneage.Functions.Labels {
+  public static class LabelSubmissions_InputQueueToTable {
     [FunctionName("LabelSubmissions_InputQueueToTable")]
     [return: Table("%TableName_LabelSubmissions%")] // Azure Table storage output binding, via TableAttribute
     public static LabelTableEntity Run(
         [QueueTrigger("%QueueName_LabelSubmissionsInput%")] string queueItem, // Azure Queue storage input binding and trigger, via QueueTriggerAttribute
         [Queue("%QueueName_LabelSubmissionsUnverified%")] ICollector<string> msg, // Azure Queue storage output binding, via QueueAttribute
-        ILogger log)
-    {
+        ILogger log) {
       log.LogInformation($"LabelSubmissions_InputQueueToTable function processed: {queueItem}");
 
       // Write same queueItem to secondary queue for unverified label submissions
@@ -22,8 +19,7 @@ namespace Juxce.Tuneage.Functions.Labels
 
       // Deserialize input queueItem, then build and return new table entry
       dynamic data = JsonConvert.DeserializeObject(queueItem);
-      return new LabelTableEntity
-      {
+      return new LabelTableEntity {
         PartitionKey = Utilities.SanitizePrimaryKey(data.shortName.ToString()),
         RowKey = Utilities.GetTicks(),
         ShortName = data.shortName,

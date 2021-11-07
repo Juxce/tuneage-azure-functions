@@ -10,18 +10,14 @@ using Newtonsoft.Json;
 using Juxce.Tuneage.Domain;
 using Juxce.Tuneage.Common;
 
-namespace Juxce.Tuneage.Functions.Labels
-{
-  public static class LabelBackstop
-  {
+namespace Juxce.Tuneage.Functions.Labels {
+  public static class LabelBackstop {
     [FunctionName("LabelBackstop")]
     public static async Task<IActionResult> Run(
         [HttpTrigger(AuthorizationLevel.Anonymous, "get", "post", Route = null)] HttpRequest req,
         [Queue("%QueueName_LabelSubmissionsInput%")] ICollector<string> msg, // Azure Queue storage output binding, via QueueAttribute
-        ILogger log)
-    {
-      try
-      {
+        ILogger log) {
+      try {
         log.LogInformation("LabelBackstop function processed a request.");
 
         string shortName = req.Query["shortName"];
@@ -37,11 +33,9 @@ namespace Juxce.Tuneage.Functions.Labels
         url = url ?? data?.url;
         profile = profile ?? data?.profile;
 
-        if (!string.IsNullOrEmpty(shortName))
-        {
+        if (!string.IsNullOrEmpty(shortName)) {
           // Add a message to the output collection saving the Label data to the queue
-          Label labelSubmission = new Label
-          {
+          Label labelSubmission = new Label {
             ShortName = shortName,
             LongName = longName,
             Url = url,
@@ -57,8 +51,7 @@ namespace Juxce.Tuneage.Functions.Labels
 
         return new OkObjectResult(responseMessage);
       }
-      catch (Exception ex)
-      {
+      catch (Exception ex) {
         ErrorHandling.LogUnexpectedError(ex, log);
         return ErrorHandling.BuildCustomUnexpectedErrorObjectResult();
       }

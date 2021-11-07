@@ -11,18 +11,14 @@ using Juxce.Tuneage.Domain;
 using Juxce.Tuneage.Domain.TableEntities;
 using Juxce.Tuneage.Common;
 
-namespace Juxce.Tuneage.Functions.Labels
-{
-  public static class LabelApprovals_SimilarityCheck
-  {
+namespace Juxce.Tuneage.Functions.Labels {
+  public static class LabelApprovals_SimilarityCheck {
     [FunctionName("LabelApprovals_SimilarityCheck")]
     public static async Task<IActionResult> Run(
         [HttpTrigger(AuthorizationLevel.Anonymous, "get", "post", Route = null)] Label req,
         [Table("%TableName_LabelApprovals%")] CloudTable cloudTable, // Azure Table storage input binding, via TableAttribute
-        ILogger log)
-    {
-      try
-      {
+        ILogger log) {
+      try {
         log.LogInformation($"LabelApprovals_SimilarityCheck function executed for {req.ShortName} at: {DateTime.Now}");
 
         // Devise query that will search for anything that starts with the shortName
@@ -50,15 +46,13 @@ namespace Juxce.Tuneage.Functions.Labels
 
         List<Label> results = new List<Label>();
         foreach (LabelTableEntity entity in
-            await cloudTable.ExecuteQuerySegmentedAsync(sameFirstCharsQuery, null))
-        {
+            await cloudTable.ExecuteQuerySegmentedAsync(sameFirstCharsQuery, null)) {
           results.Add(Mapper.LabelEntityToReturnObject(entity));
         }
 
         return new OkObjectResult(JsonConvert.SerializeObject(results));
       }
-      catch (Exception ex)
-      {
+      catch (Exception ex) {
         ErrorHandling.LogUnexpectedError(ex, log);
         return ErrorHandling.BuildCustomUnexpectedErrorObjectResult();
       }

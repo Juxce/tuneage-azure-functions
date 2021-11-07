@@ -11,18 +11,14 @@ using Juxce.Tuneage.Domain.TableEntities;
 using Juxce.Tuneage.Domain;
 using Juxce.Tuneage.Common;
 
-namespace Juxce.Tuneage.Functions.Labels
-{
-  public static class LabelApprovals_GetAllDocuments
-  {
+namespace Juxce.Tuneage.Functions.Labels {
+  public static class LabelApprovals_GetAllDocuments {
     [FunctionName("LabelApprovals_GetAllDocuments")]
     public static async Task<IActionResult> Run(
         [HttpTrigger(AuthorizationLevel.Anonymous, "get", "post", Route = null)] Label req,
         [Table("%TableName_LabelApprovals%")] CloudTable cloudTable, // Azure Table storage input binding, via TableAttribute
-        ILogger log)
-    {
-      try
-      {
+        ILogger log) {
+      try {
         log.LogInformation($"LabelApprovals_GetAllDocuments function executed at: {DateTime.Now}");
 
         int numberOfResults = 0;
@@ -35,15 +31,13 @@ namespace Juxce.Tuneage.Functions.Labels
 
         List<Label> results = new List<Label>();
         foreach (LabelTableEntity entity in
-            await cloudTable.ExecuteQuerySegmentedAsync(getAllQuery, null))
-        {
+            await cloudTable.ExecuteQuerySegmentedAsync(getAllQuery, null)) {
           results.Add(Mapper.LabelEntityToReturnObject(entity));
         }
 
         return new OkObjectResult(JsonConvert.SerializeObject(results));
       }
-      catch (Exception ex)
-      {
+      catch (Exception ex) {
         ErrorHandling.LogUnexpectedError(ex, log);
         return ErrorHandling.BuildCustomUnexpectedErrorObjectResult();
       }

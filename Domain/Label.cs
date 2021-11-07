@@ -1,11 +1,9 @@
 using System;
 using Newtonsoft.Json;
 
-namespace Juxce.Tuneage.Domain
-{
+namespace Juxce.Tuneage.Domain {
   [Serializable()]
-  public class Label
-  {
+  public class Label {
     [JsonProperty(PropertyName = "id")]
     public string Id { get; set; }
 
