@@ -29,18 +29,19 @@ namespace Juxce.Tuneage.Functions.Labels {
         string shortName = req.ShortName;
         if (string.IsNullOrEmpty(shortName))
           return new BadRequestObjectResult("No shortName was found in the request. Sorry.");
-        char lastChar = shortName[shortName.Length - 1];
+        string searchString = Utilities.MakeSearchString(shortName);
+        char lastChar = searchString[searchString.Length - 1];
         lastChar++;
         char nextAsciiChar = lastChar;
-        char[] phraseAsChars = shortName.ToCharArray();
-        phraseAsChars[shortName.Length - 1] = nextAsciiChar;
+        char[] phraseAsChars = searchString.ToCharArray();
+        phraseAsChars[searchString.Length - 1] = nextAsciiChar;
         string shortNameUpperBound = new string(phraseAsChars);
 
         TableQuery<LabelTableEntity> sameFirstCharsQuery = new TableQuery<LabelTableEntity>().Where(
             TableQuery.CombineFilters(
-                TableQuery.GenerateFilterCondition("PartitionKey", "ge", shortName),
+                TableQuery.GenerateFilterCondition("RowKey", "ge", searchString),
                 TableOperators.And,
-                TableQuery.GenerateFilterCondition("PartitionKey", "lt", shortNameUpperBound)
+                TableQuery.GenerateFilterCondition("RowKey", "lt", shortNameUpperBound)
             )
         );
 
