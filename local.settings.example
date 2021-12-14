@@ -2,6 +2,8 @@
   "IsEncrypted": false,
   "Values": {
     "AzureWebJobsStorage": "YOUR_OWN_AZURE_STORAGE_CONNECTION_VALUE_COPIED_FROM_YOUR_ACCOUNT",
+    "Auth0Url": "https://example.us.auth0.com/",
+    "Auth0Audience": "https://audience.example",
     "QueueName_LabelSubmissionsInput" : "WHATEVER_YOU_CHOOSE_TO_NAME_YOUR_LABEL_SUBMISSIONS_INPUT_QUEUE",
     "QueueName_LabelSubmissionsUnverified" : "WHATEVER_YOU_CHOOSE_TO_NAME_YOUR_LABEL_SUBMISSIONS_UNVERIFIED_QUEUE",
     "TableName_LabelSubmissions" : "WHATEVER_YOU_CHOOSE_TO_NAME_YOUR_LABEL_SUBMISSIONS_NOSQL_TABLE",

@@ -3,12 +3,16 @@
     <TargetFramework>netcoreapp3.1</TargetFramework>
     <AzureFunctionsVersion>v3</AzureFunctionsVersion>
     <RootNamespace>tuneage_azure_functions</RootNamespace>
+    <_FunctionsSkipCleanOutput>true</_FunctionsSkipCleanOutput><!-- added to fix build error regarding loading of System.IdentityModel.Tokens.Jwt version -->
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Azure.Storage.Queues" Version="12.7.0" />
     <PackageReference Include="Microsoft.Azure.Cosmos.Table" Version="1.0.8" />
     <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.Storage" Version="4.0.4" />
+    <PackageReference Include="Microsoft.IdentityModel.Protocols" Version="6.15.0" />
+    <PackageReference Include="Microsoft.IdentityModel.Protocols.OpenIdConnect" Version="6.15.0" />
     <PackageReference Include="Microsoft.NET.Sdk.Functions" Version="3.0.11" />
+    <PackageReference Include="System.IdentityModel.Tokens.JWT" Version="6.15.0" />
     <PackageReference Include="WindowsAzure.Storage" Version="9.3.3" /><!-- added to fix binding error with CloudTable -->
   </ItemGroup>
   <ItemGroup>
