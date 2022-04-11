@@ -1,0 +1,375 @@
+# PowerShell Function App to Windows on Azure
+# Build a PowerShell Function App and deploy it to Azure as a Windows function app.
+# Add steps that analyze code, save build artifacts, deploy, and more:
+# https://docs.microsoft.com/en-us/azure/azure-functions/functions-reference-powershell
+
+trigger:
+  - main
+  
+variables:
+  # Azure Resource Manager connection created during pipeline creation
+  azureSubscription: 'JuxceTuneageAzureServiceConnection'
+
+  # Function app name
+  functionAppName: 'JuxceTuneageFunctionApp'
+
+  # Environment name
+  environmentName: 'JuxceTuneage'
+
+  # Resource Group Name
+  resourceGroupName: 'JuxceTuneageResources'
+
+  # Agent VM image name
+  vmImageName: 'ubuntu-latest'
+
+  # Working Directory
+  workingDirectory: '$(System.DefaultWorkingDirectory)/'
+
+  # Location
+  location: 'westus'
+
+  # Debugging Switch
+  debug: true 
+  
+pool:
+  vmImage: $(vmImageName)
+  
+stages:
+
+- stage: UnitTestingAndBuild
+  displayName: Unit Testing and Build
+  condition: false
+
+
+  jobs:
+
+  - job: PesterUnitTests
+    displayName: Unit Testing and Publish Results
+
+    steps: 
+
+    #TD: -13 Fix "Problems" with Pest VSCode extension
+    - task: Pester@10
+      displayName: Pester Unit Testing
+      inputs:
+        scriptFolder: '$(System.DefaultWorkingDirectory)/TemperatureConversionFunction/*.ps1'
+        resultsFile: '$(System.DefaultWorkingDirectory)/TemperatureConversionFunction/Test-Pester.xml'
+        CodeCoverageOutputFile: '$(System.DefaultWorkingDirectory)/Pester-Coverage.xml'
+        usePSCore: true
+
+    - powershell: |
+        ls $(System.DefaultWorkingDirectory)/*.xml -R
+      displayName: Show Contents of Working Directory
+      condition: ${{ variables.debug }}
+
+    - task: PublishTestResults@2
+      displayName: Publish Pester Unit Test Results
+      inputs:
+        testResultsFormat: 'NUnit'
+        testResultsFiles: '$(System.DefaultWorkingDirectory)/TemperatureConversionFunction/Test-Pester.xml'
+        failTaskOnFailedTests: true
+        testRunTitle: 'Pester Unit Tests'
+
+    - task: PublishCodeCoverageResults@1
+      displayName: Publish Pester Code Coverage
+      inputs:
+        codeCoverageTool: 'JaCoCo'
+        summaryFileLocation: '$(System.DefaultWorkingDirectory)/Pester-Coverage.xml'
+        pathToSources: '$(System.DefaultWorkingDirectory)'
+        failIfCoverageEmpty: true
+
+  - job: ArchiveAndPublishArtifact
+    displayName: Archive and Publish Artifact
+    condition: succeeded()
+    dependsOn: PesterUnitTests
+
+    steps:
+
+    - powershell: |
+        ls $(workingDirectory) -R
+      displayName: Show Contents of Working Directory
+      condition: ${{ variables.debug }}
+
+    - task: ArchiveFiles@2
+      displayName: Archive Files
+      condition: succeeded()
+      inputs:
+        rootFolderOrFile: $(workingDirectory)
+        includeRootFolder: false
+        archiveType: zip
+        archiveFile: $(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip
+        replaceExistingArchive: true
+    
+    - powershell: |
+        ls $(Build.ArtifactStagingDirectory) -R
+      displayName: Show Contents of Build Artifact Directory
+      condition: ${{ variables.debug }}
+
+    #TD: -0 Only publish required files.
+    - publish: $(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip
+      artifact: drop
+      displayName: Publish Artifact
+   
+- stage: Provisioning
+  displayName: Provisioning
+  dependsOn: UnitTestingAndBuild
+  condition: false and succeeded()
+
+  jobs:
+
+  #TD: -6 Add What If step to all deployments; Cancel build if a delete is detected; Unless there is an explicit execption authorizing the deletion
+  #TD: -10 Run provisioning tests in a different subscription
+  - job: ProvisioningTests
+    displayName: Provisioning Test Resources
+
+    steps:
+
+    - powershell: |
+        md clixml
+      displayName: Make Clixml Folder
+
+    #TD: -9 Skip these tests if provisioning code hasn't changed
+    - task: AzureCLI@2
+      displayName: Pester Provisioning Test Resources
+      inputs:
+        azureSubscription: $(azureSubscription)
+        scriptType: 'pscore'
+        scriptLocation: 'inlineScript'
+        inlineScript: |
+          $config = New-PesterConfiguration
+          $config.Run.Path = './PtP/*.ps1'
+          $config.TestResult.Enabled = $true
+          $config.TestResult.OutputFormat = 'NUnitXml'
+          $config.TestResult.OutputPath = './PtP/testResults.xml'
+          $config.TestResult.TestSuiteName = 'Pester Provisioning and Deployment Tests'
+          $config.CodeCoverage.Path = './PtP/*.ps1'
+          $config.CodeCoverage.OutputPath = './PtP/coverage.xml'
+          $config.CodeCoverage.Enabled = $true
+          $config.CodeCoverage.OutputFormat = 'JaCoCo'
+          $config.CodeCoverage.ExcludeTests = $true
+          $config.CodeCoverage.CoveragePercentTarget = 80        
+          Invoke-Pester -Configuration $config
+
+    - powershell: |
+        ls $(System.DefaultWorkingDirectory) -R
+      displayName: Show Contents of Working Directory
+      condition: ${{ variables.debug }}    
+
+    - task: PublishTestResults@2
+      displayName: Publish Pester Provisioning Test Results
+      inputs:
+        testResultsFormat: 'NUnit'
+        testResultsFiles: '$(System.DefaultWorkingDirectory)/PtP/testResults.xml'
+        failTaskOnFailedTests: true
+        testRunTitle: 'Pester Provisioning Tests'
+
+    - task: PublishCodeCoverageResults@1
+      displayName: Publish Pester Provisioning Code Coverage
+      inputs:
+        codeCoverageTool: 'JaCoCo'
+        summaryFileLocation: '$(System.DefaultWorkingDirectory)/PtP/coverage.xml'
+        pathToSources: '$(System.DefaultWorkingDirectory)/PtP/'
+        failIfCoverageEmpty: true
+
+    - task: PublishPipelineArtifact@1
+      displayName: Publish Clixml Files
+      inputs:
+        targetPath: '$(System.DefaultWorkingDirectory)/clixml'
+        artifact: 'testprovisioning.clixml'
+        publishLocation: 'pipeline'      
+
+  - job: ResourceGroupProvisioning
+    displayName: Resource Group Provisioning
+    dependsOn: ProvisioningTests
+    condition: succeeded()
+
+    steps:
+
+    - powershell: |
+        md clixml
+      displayName: Make Clixml Folder
+
+    - task: AzureCLI@2
+      displayName: Provision Resource Group Bicep
+      inputs:
+        azureSubscription: $(azureSubscription)
+        scriptType: 'pscore'
+        scriptLocation: 'scriptPath'
+        scriptPath: '$(System.DefaultWorkingDirectory)/PtP/invoke.provision.resourceGroup.ps1'
+        arguments: -location $(location) -resourceGroupName $(resourceGroupName) -workingDirectory $(System.DefaultWorkingDirectory) -templateFile 'provisioning.resourceGroup.bicep'
+
+    - task: PublishPipelineArtifact@1
+      displayName: Publish Clixml Files
+      inputs:
+        targetPath: '$(System.DefaultWorkingDirectory)/clixml'
+        artifact: 'resourcegroup.clixml'
+        publishLocation: 'pipeline'      
+
+  - job: FunctionAppProvisioning
+    displayName: Function App Provisioning
+    condition: succeeded()
+    dependsOn: ResourceGroupProvisioning
+
+    steps:
+
+      - powershell: |
+          ls $(System.DefaultWorkingDirectory) -R
+          ls ./PtP/provisioning.functionApp.bicep
+          ls $(System.DefaultWorkingDirectory)/PtP/provisioning.functionApp.bicep
+        displayName: Show Contents of Working Directory
+        condition: ${{ variables.debug }}    
+
+      - powershell: |
+          md clixml
+        displayName: Make Clixml Folder
+      
+      - task: AzureCLI@2
+        displayName: Provision Function App Bicep
+        inputs:
+          azureSubscription: $(azureSubscription)
+          scriptType: 'pscore'
+          scriptLocation: 'scriptPath'
+          scriptPath: '$(System.DefaultWorkingDirectory)/PtP/invoke.provision.functionApp.ps1'
+          arguments: -location $(location) -resourceGroupName $(resourceGroupName) -workingDirectory $(System.DefaultWorkingDirectory) -templateFile 'provisioning.functionApp.bicep' -appName $(functionAppName)
+
+      - task: PublishPipelineArtifact@1
+        displayName: Publish Clixml Files
+        inputs:
+          targetPath: '$(System.DefaultWorkingDirectory)/clixml'
+          artifact: 'functionapp.clixml'
+          publishLocation: 'pipeline'      
+  
+- stage: Deployment
+  displayName: Deployment
+  dependsOn: Provisioning
+  condition: false and succeeded()
+  
+  jobs: 
+
+  - deployment: FunctionDeployment
+    displayName: Deploy Functions to Staging Slot
+    environment: $(environmentName)
+
+    pool:
+
+      vmImage: $(vmImageName)
+  
+    strategy: 
+
+      runOnce: 
+
+        deploy: 
+
+          steps:
+
+          - checkout: none
+
+          - powershell: |
+              ls $(Pipeline.Workspace)/drop/ -R
+            displayName: Show Contents of Pipeline Workspace
+
+          - task: AzureCLI@2
+            #TD: -1 Pesterize this as part of provisioning
+            displayName: Create Staging Slot if needed
+            inputs:
+              azureSubscription: 'JuxceTuneageAzureServiceConnection'
+              scriptType: 'pscore'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                $functionAppSlots = az functionapp deployment slot list --resource-group JuxceTuneageResources --name JuxceTuneageFunctionApp | convertfrom-json                
+                if ($null -eq $functionAppSlots) {
+                  $functionAppSlotOutput = az functionapp deployment slot create --resource-group JuxceTuneageResources --name JuxceTuneageFunctionApp --slot Staging --configuration-source JuxceTuneageFunctionApp | convertfrom-json
+                  Write-host $functionAppSlotOutput
+                  } else {
+                    if ($functionAppSlots.name -ne 'Staging'){ throw 'Slot exists but it is not Staging!'}
+                  }
+
+          - task: AzureFunctionApp@1
+            displayName: Deploy Functions to Function App
+            inputs:
+              azureSubscription: $(azureSubscription)
+              appType: 'functionApp'
+              appName: '$(functionAppName)'
+              deployToSlotOrASE: true
+              slotName: 'Staging'
+              package: '$(Pipeline.Workspace)/drop/$(Build.BuildId).zip'
+              deploymentMethod: 'auto'
+
+- stage: Verification
+  displayName: Verification
+  dependsOn: Deployment
+  condition: false and succeeded()
+  
+  jobs: 
+  
+  #TD: -12 Include the build date and sha in the body of the response; Exclude the build date and time from Run, Integration and other tests.
+  - job: RunIntegrationTests
+    displayName: Run Integration Tests
+
+    steps:
+
+    - powershell: |
+        ls $(System.DefaultWorkingDirectory) -R
+      displayName: Show Contents of Working Directory
+      condition: ${{ variables.debug }}    
+
+    - task: AzureCLI@2
+      displayName: Pester Integration Tests
+      inputs:
+        azureSubscription: $(azureSubscription)
+        scriptType: 'pscore'
+        scriptLocation: 'inlineScript'
+        inlineScript: |
+          $config = New-PesterConfiguration
+          $config.Run.Path = './IntegrationTests/*.ps1'
+          $config.TestResult.Enabled = $true
+          $config.TestResult.OutputFormat = 'NUnitXml'
+          $config.TestResult.OutputPath = './IntegrationTests/testResults.xml'
+          $config.TestResult.TestSuiteName = 'Pester Integration Tests'
+          Invoke-Pester -Configuration $config
+
+    - powershell: |
+        ls $(System.DefaultWorkingDirectory) -R
+      displayName: Show Contents of Working Directory
+      condition: ${{ variables.debug }}    
+
+    - task: PublishTestResults@2
+      displayName: Publish Integration Test Results
+      inputs:
+        testResultsFormat: 'NUnit'
+        testResultsFiles: '$(System.DefaultWorkingDirectory)/IntegrationTests/testResults.xml'
+        failTaskOnFailedTests: true
+        testRunTitle: 'Pester Integration Tests'
+
+#TD: -4 Small Add Post swap smoke test to PtP; Should we deploy in trial mode?
+- stage: GoLive
+  displayName: Go Live
+  dependsOn: Verification
+  condition: false and succeeded()
+  
+  jobs: 
+  
+  #TD: -11 After a successful production swap, create a new slot for the old version and swap staging into the new slot; Delete the staging swap
+  - job: SwapProductionWithStaging
+    displayName: Swap Production with Staging
+
+    steps:
+
+    - checkout: none
+
+    - task: AzureAppServiceManage@0
+      displayName: Update Function App to Swap Production with Staging
+      inputs:
+        azureSubscription: 'JuxceTuneageAzureServiceConnection'
+        Action: 'Swap Slots'
+        WebAppName: 'JuxceTuneageFunctionApp'
+        ResourceGroupName: 'JuxceTuneageResources'
+        SourceSlot: 'Staging'
+
+# PtP Wide Debt
+#TD: -1 Medium Generate readme.md from the WI descriptions for WI#s in the code; Install azure=devops on build agent; Generate WIs from negative WI#s To Do comments, YAML displayNames, Create sub WI#s fron delimited lists, what else?
+#TD: -2 Medium Cleanup Pester Output in Logs; Replace Write-host with write-verbose; Control PtP output to App Insights
+#TD: -3 Medium Manage Runtime output to App Insights
+#TD: -5 Generate Defect WI#s on pipeline failures
+#TD: -7 Add an external dependency on the Green-Light pipeline and move all swap and post swap action to the Green-Light pipeline.
+#TD: -8 Add Sha for the latest commit to the azure-pipelines.yml file to all deployed resources, and generated artifacts.
