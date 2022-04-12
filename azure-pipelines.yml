@@ -33,6 +33,12 @@ stages:
 
     steps:
 
+    - powershell: |
+        ls $(System.DefaultWorkingDirectory)  -R
+      displayName: Show Contents of Working Directory
+      condition: ${{ variables.debug }}
+
+
     - task: DotNetCoreCLI@2
       inputs:
         command: 'build'
