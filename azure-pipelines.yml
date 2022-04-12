@@ -4,7 +4,7 @@
 # https://docs.microsoft.com/en-us/azure/azure-functions/functions-reference-powershell
 
 trigger:
-  - master
+  - main
   
 variables:
   azureSubscription: 'JuxceTuneageAzureServiceConnection'
