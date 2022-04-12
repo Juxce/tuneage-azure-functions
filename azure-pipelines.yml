@@ -7,30 +7,16 @@ trigger:
   - main
   
 variables:
-  # Azure Resource Manager connection created during pipeline creation
   azureSubscription: 'JuxceTuneageAzureServiceConnection'
-
-  # Function app name
   functionAppName: 'JuxceTuneageFunctionApp'
-
-  # Environment name
   environmentName: 'JuxceTuneage'
-
-  # Resource Group Name
   resourceGroupName: 'JuxceTuneageResources'
-
-  # Agent VM image name
   vmImageName: 'ubuntu-latest'
-
-  # Working Directory
   workingDirectory: '$(System.DefaultWorkingDirectory)/'
-
-  # Location
   location: 'westus'
-
-  # Debugging Switch
   debug: true 
-  
+  buildConfiguration: 'Release'
+
 pool:
   vmImage: $(vmImageName)
   
@@ -38,77 +24,112 @@ stages:
 
 - stage: UnitTestingAndBuild
   displayName: Unit Testing and Build
-  condition: false
+  condition: true
 
 
   jobs:
+  
+  - job: Build
 
-  - job: PesterUnitTests
-    displayName: Unit Testing and Publish Results
+    steps:
 
-    steps: 
-
-    #TD: -13 Fix "Problems" with Pest VSCode extension
-    - task: Pester@10
-      displayName: Pester Unit Testing
+    - task: DotNetCoreCLI@2
       inputs:
-        scriptFolder: '$(System.DefaultWorkingDirectory)/TemperatureConversionFunction/*.ps1'
-        resultsFile: '$(System.DefaultWorkingDirectory)/TemperatureConversionFunction/Test-Pester.xml'
-        CodeCoverageOutputFile: '$(System.DefaultWorkingDirectory)/Pester-Coverage.xml'
-        usePSCore: true
+        command: 'build'
+        projects: '$(System.DefaultWorkingDirectory)/'
+        arguments: '--configuration $(buildConfiguration)'
 
     - powershell: |
         ls $(System.DefaultWorkingDirectory)/*.xml -R
       displayName: Show Contents of Working Directory
       condition: ${{ variables.debug }}
 
-    - task: PublishTestResults@2
-      displayName: Publish Pester Unit Test Results
+    - task: DotNetCoreCLI@2
       inputs:
-        testResultsFormat: 'NUnit'
-        testResultsFiles: '$(System.DefaultWorkingDirectory)/TemperatureConversionFunction/Test-Pester.xml'
-        failTaskOnFailedTests: true
-        testRunTitle: 'Pester Unit Tests'
+        command: 'test'
+        projects: '$(System.DefaultWorkingDirectory)/'
+        testRunTitle: 'Tuneage Unit Tests'
+        workingDirectory: '$(System.DefaultWorkingDirectory)/'
 
-    - task: PublishCodeCoverageResults@1
-      displayName: Publish Pester Code Coverage
-      inputs:
-        codeCoverageTool: 'JaCoCo'
-        summaryFileLocation: '$(System.DefaultWorkingDirectory)/Pester-Coverage.xml'
-        pathToSources: '$(System.DefaultWorkingDirectory)'
-        failIfCoverageEmpty: true
-
-  - job: ArchiveAndPublishArtifact
-    displayName: Archive and Publish Artifact
-    condition: succeeded()
-    dependsOn: PesterUnitTests
-
-    steps:
-
-    - powershell: |
-        ls $(workingDirectory) -R
-      displayName: Show Contents of Working Directory
-      condition: ${{ variables.debug }}
-
-    - task: ArchiveFiles@2
-      displayName: Archive Files
-      condition: succeeded()
-      inputs:
-        rootFolderOrFile: $(workingDirectory)
-        includeRootFolder: false
-        archiveType: zip
-        archiveFile: $(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip
-        replaceExistingArchive: true
+      # - script: dotnet build --configuration $(buildConfiguration)
+      #   displayName: "$(buildConfiguration) Build"
+      
+      # - task: DotNetCoreCLI@2
+      #   displayName: Unit Tests
+      #   name: unit_tests
+      #   enabled: true
+      #   inputs:
+      #     command: test
+      #     projects: '**/*Tests.Unit/*.csproj'
+      #     arguments: '--configuration $(buildConfiguration)'
+      
     
-    - powershell: |
-        ls $(Build.ArtifactStagingDirectory) -R
-      displayName: Show Contents of Build Artifact Directory
-      condition: ${{ variables.debug }}
+  # - job: PesterUnitTests
+  #   displayName: Unit Testing and Publish Results
 
-    #TD: -0 Only publish required files.
-    - publish: $(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip
-      artifact: drop
-      displayName: Publish Artifact
+  #   steps: 
+
+  #   #TD: -13 Fix "Problems" with Pest VSCode extension
+  #   - task: Pester@10
+  #     displayName: Pester Unit Testing
+  #     inputs:
+  #       scriptFolder: '$(System.DefaultWorkingDirectory)/TemperatureConversionFunction/*.ps1'
+  #       resultsFile: '$(System.DefaultWorkingDirectory)/TemperatureConversionFunction/Test-Pester.xml'
+  #       CodeCoverageOutputFile: '$(System.DefaultWorkingDirectory)/Pester-Coverage.xml'
+  #       usePSCore: true
+
+  #   - powershell: |
+  #       ls $(System.DefaultWorkingDirectory)/*.xml -R
+  #     displayName: Show Contents of Working Directory
+  #     condition: ${{ variables.debug }}
+
+  #   - task: PublishTestResults@2
+  #     displayName: Publish Pester Unit Test Results
+  #     inputs:
+  #       testResultsFormat: 'NUnit'
+  #       testResultsFiles: '$(System.DefaultWorkingDirectory)/TemperatureConversionFunction/Test-Pester.xml'
+  #       failTaskOnFailedTests: true
+  #       testRunTitle: 'Pester Unit Tests'
+
+  #   - task: PublishCodeCoverageResults@1
+  #     displayName: Publish Pester Code Coverage
+  #     inputs:
+  #       codeCoverageTool: 'JaCoCo'
+  #       summaryFileLocation: '$(System.DefaultWorkingDirectory)/Pester-Coverage.xml'
+  #       pathToSources: '$(System.DefaultWorkingDirectory)'
+  #       failIfCoverageEmpty: true
+
+  # - job: ArchiveAndPublishArtifact
+  #   displayName: Archive and Publish Artifact
+  #   condition: succeeded()
+  #   dependsOn: PesterUnitTests
+
+  #   steps:
+
+  #   - powershell: |
+  #       ls $(workingDirectory) -R
+  #     displayName: Show Contents of Working Directory
+  #     condition: ${{ variables.debug }}
+
+  #   - task: ArchiveFiles@2
+  #     displayName: Archive Files
+  #     condition: succeeded()
+  #     inputs:
+  #       rootFolderOrFile: $(workingDirectory)
+  #       includeRootFolder: false
+  #       archiveType: zip
+  #       archiveFile: $(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip
+  #       replaceExistingArchive: true
+    
+  #   - powershell: |
+  #       ls $(Build.ArtifactStagingDirectory) -R
+  #     displayName: Show Contents of Build Artifact Directory
+  #     condition: ${{ variables.debug }}
+
+  #   #TD: -0 Only publish required files.
+  #   - publish: $(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip
+  #     artifact: drop
+  #     displayName: Publish Artifact
    
 - stage: Provisioning
   displayName: Provisioning
