@@ -40,17 +40,19 @@ stages:
 
 
     - task: DotNetCoreCLI@2
+      condition: succeeded()
       inputs:
         command: 'build'
         projects: 'tuneage-azure-functions.csproj'
         arguments: '--configuration $(buildConfiguration)'
 
     - powershell: |
-        ls $(System.DefaultWorkingDirectory)/*.xml -R
+        ls $(System.DefaultWorkingDirectory) -R
       displayName: Show Contents of Working Directory
       condition: ${{ variables.debug }}
 
     - task: DotNetCoreCLI@2
+      condition: succeeded()
       inputs:
         command: 'test'
         projects: '$(System.DefaultWorkingDirectory)/'
