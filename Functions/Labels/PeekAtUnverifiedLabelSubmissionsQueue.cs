@@ -9,13 +9,13 @@ using Microsoft.Extensions.Logging;
 using Juxce.Tuneage.Common;
 
 namespace Juxce.Tuneage.Functions.Labels {
-  public static class LabelSubmissions_PeekAtUnverifiedQueue {
-    [FunctionName("LabelSubmissions_PeekAtUnverifiedQueue")]
+  public static class PeekAtUnverifiedLabelSubmissionsQueue {
+    [FunctionName("PeekAtUnverifiedLabelSubmissionsQueue")]
     public static async Task<IActionResult> Run(
         [HttpTrigger(AuthorizationLevel.Anonymous, "get", "post", Route = null)] HttpRequest req,
         ILogger log) {
       try {
-        log.LogInformation("LabelSubmissions_PeekAtUnverifiedQueue function processed a request.");
+        log.LogInformation("PeekAtUnverifiedLabelSubmissionsQueue function processed a request.");
 
         // Create QueueClient to use proper Base64 encoding to match Azure Functions default
         string connectionString =

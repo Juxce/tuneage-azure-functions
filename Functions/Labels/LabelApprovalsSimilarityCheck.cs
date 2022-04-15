@@ -12,14 +12,14 @@ using Juxce.Tuneage.Domain.TableEntities;
 using Juxce.Tuneage.Common;
 
 namespace Juxce.Tuneage.Functions.Labels {
-  public static class LabelApprovals_SimilarityCheck {
-    [FunctionName("LabelApprovals_SimilarityCheck")]
+  public static class LabelApprovalsSimilarityCheck {
+    [FunctionName("LabelApprovalsSimilarityCheck")]
     public static async Task<IActionResult> Run(
         [HttpTrigger(AuthorizationLevel.Anonymous, "get", "post", Route = null)] Label req,
         [Table("%TableName_LabelApprovals%")] CloudTable cloudTable, // Azure Table storage input binding, via TableAttribute
         ILogger log) {
       try {
-        log.LogInformation($"LabelApprovals_SimilarityCheck function executed for {req.ShortName} at: {DateTime.Now}");
+        log.LogInformation($"LabelApprovalsSimilarityCheck function executed for {req.ShortName} at: {DateTime.Now}");
 
         // Devise query that will search for anything that starts with the shortName
         // being used, and hack a query together that finds any existing entry that

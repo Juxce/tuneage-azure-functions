@@ -7,14 +7,14 @@ using Juxce.Tuneage.Domain;
 using Juxce.Tuneage.Common;
 
 namespace Juxce.Tuneage.Functions.Labels {
-  public static class LabelApprovals_CreateDocument {
-    [FunctionName("LabelApprovals_CreateDocument")]
+  public static class CreateLabelApproval {
+    [FunctionName("CreateLabelApproval")]
     [return: Table("%TableName_LabelApprovals%")] // Azure Table storage output binding, via TableAttribute
     public static LabelTableEntity Run(
         [HttpTrigger(AuthorizationLevel.Anonymous, "get", "post", Route = null)] Label req,
         ILogger log) {
       try {
-        log.LogInformation($"LabelApprovals_CreateDocument function processed for: {req.ShortName}");
+        log.LogInformation($"CreateLabelApproval function processed for: {req.ShortName}");
 
         return new LabelTableEntity {
           PartitionKey = Utilities.SanitizePrimaryKey(req.ShortName),

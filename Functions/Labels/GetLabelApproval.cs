@@ -10,14 +10,14 @@ using Juxce.Tuneage.Domain;
 using Juxce.Tuneage.Common;
 
 namespace Juxce.Tuneage.Functions.Labels {
-  public static class LabelApprovals_ReadDocument {
-    [FunctionName("LabelApprovals_ReadDocument")]
+  public static class GetLabelApproval {
+    [FunctionName("GetLabelApproval")]
     public static IActionResult Run(
         [HttpTrigger(AuthorizationLevel.Anonymous, "get", "post", Route = null)] LabelTableEntity req,
         [Table("%TableName_LabelApprovals%", "{ShortName}", "{RowKey}")] LabelTableEntity labelEntity, // Azure Table storage input binding, via TableAttribute
         ILogger log) {
       try {
-        log.LogInformation($"LabelApprovals_ReadDocument function executed at: {DateTime.Now}");
+        log.LogInformation($"GetLabelApproval function executed at: {DateTime.Now}");
 
         string shortName = req.ShortName;
 

@@ -15,18 +15,18 @@ using System.Security.Claims;
 
 
 namespace Juxce.Tuneage.Functions.Labels {
-  public static class LabelApprovals_GetAllDocuments {
-    [FunctionName("LabelApprovals_GetAllDocuments")]
+  public static class GetAllLabelApprovals {
+    [FunctionName("GetAllLabelApprovals")]
     public static async Task<IActionResult> Run(
         [HttpTrigger(AuthorizationLevel.Anonymous, "get", "post", Route = null)] HttpRequestMessage req,
         [Table("%TableName_LabelApprovals%")] CloudTable cloudTable, // Azure Table storage input binding, via TableAttribute
         ILogger log) {
       try {
-        log.LogInformation($"LabelApprovals_GetAllDocuments function executed at: {DateTime.Now}");
+        log.LogInformation($"GetAllLabelApprovals function executed at: {DateTime.Now}");
 
         ClaimsPrincipal principal;
         if ((principal = await Security.ValidateTokenAsync(req.Headers.Authorization)) == null) {
-            return new UnauthorizedResult();
+          return new UnauthorizedResult();
         }
 
         int numberOfResults = 0;
@@ -44,10 +44,12 @@ namespace Juxce.Tuneage.Functions.Labels {
         }
 
         return new OkObjectResult(JsonConvert.SerializeObject(results));
-      } catch (ArgumentException) {
+      }
+      catch (ArgumentException) {
         // This exception is thrown when the authorization token cannot be properly decoded as a Base64Url encoded string
         return new UnauthorizedResult();
-      } catch (Exception ex) {
+      }
+      catch (Exception ex) {
         ErrorHandling.LogUnexpectedError(ex, log);
         return ErrorHandling.BuildCustomUnexpectedErrorObjectResult();
       }

@@ -11,13 +11,13 @@ using Newtonsoft.Json;
 using Juxce.Tuneage.Common;
 
 namespace Juxce.Tuneage.Functions.Labels {
-  public static class LabelSubmissions_PopUnverifiedQueue {
-    [FunctionName("LabelSubmissions_PopUnverifiedQueue")]
+  public static class PopUnverifiedLabelSubmissionsQueue {
+    [FunctionName("PopUnverifiedLabelSubmissionsQueue")]
     public static async Task<IActionResult> Run(
         [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = null)] HttpRequest req,
         ILogger log) {
       try {
-        log.LogInformation("LabelSubmissions_PopUnverifiedQueue function processed a request.");
+        log.LogInformation("PopUnverifiedLabelSubmissionsQueue function processed a request.");
 
         string messageId = req.Query["messageId"];
 

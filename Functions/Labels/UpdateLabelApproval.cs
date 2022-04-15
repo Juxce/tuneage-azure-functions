@@ -10,14 +10,14 @@ using Juxce.Tuneage.Domain.TableEntities;
 using Juxce.Tuneage.Common;
 
 namespace Juxce.Tuneage.Functions.Labels {
-  public static class LabelApprovals_UpdateDocument {
-    [FunctionName("LabelApprovals_UpdateDocument")]
+  public static class UpdateLabelApproval {
+    [FunctionName("UpdateLabelApproval")]
     public static async Task<IActionResult> Run(
         [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = null)] LabelTableEntity req,
         [Table("%TableName_LabelApprovals%")] CloudTable cloudTable, // Azure Table storage input binding, via TableAttribute
         ILogger log) {
       try {
-        log.LogInformation($"LabelApprovals_UpdateDocument function executed for {req.ShortName} at: {DateTime.Now}");
+        log.LogInformation($"UpdateLabelApproval function executed for {req.ShortName} at: {DateTime.Now}");
 
         string shortName = req.ShortName;
         string rowKey = req.RowKey;
